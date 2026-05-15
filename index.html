@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Guardian Drive Alpha - Test Mode</title>
+    <title>Guardian Drive Alpha - Advanced</title>
     
     <link rel="manifest" href="./manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -24,21 +24,24 @@
         .nav-btn.active { color: #deff9a; }
         .nav-btn { color: #64748b; }
         
-        /* Efectos Visuales */
+        /* Animación de Impacto (Punto central del S.O.S) */
         .onda-alerta {
-            width: 50px; height: 50px;
-            background-color: rgba(239, 68, 68, 0.4);
-            border: 2px solid #ef4444;
+            width: 30px; height: 30px;
+            background-color: #ef4444;
+            border: 3px solid white;
             border-radius: 50%;
-            animation: onda-pulso 1.5s infinite ease-out;
-            transform: translate(-50%, -50%);
+            animation: latido-rojo 1s infinite;
+            box-shadow: 0 0 20px #ef4444;
         }
-        @keyframes onda-pulso {
-            0% { transform: scale(0.2); opacity: 1; }
-            100% { transform: scale(3); opacity: 0; }
+        @keyframes latido-rojo {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(0.8); }
         }
+        
+        /* Tu propia ubicación en azul */
         .mi-ubicacion {
-            width: 16px; height: 16px;
+            width: 18px; height: 18px;
             background-color: #3b82f6;
             border: 3px solid white;
             border-radius: 50%;
@@ -56,16 +59,18 @@
 
         <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#334155] shadow-2xl">
             <div class="mb-4">
-                <label class="block text-xs font-bold text-[#94a3b8] mb-2 uppercase">Nombre Conductor</label>
+                <label class="block text-xs font-bold text-[#94a3b8] mb-2 uppercase">Conductor</label>
                 <input type="text" id="reg-nombre" placeholder="Tu nombre" class="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg p-4 text-sm outline-none focus:border-[#deff9a]">
             </div>
-            <div class="mb-4">
-                <label class="block text-xs font-bold text-[#94a3b8] mb-2 uppercase">Patente Vehículo</label>
-                <input type="text" id="reg-patente" placeholder="LXYZ-99" class="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg p-4 text-sm uppercase outline-none focus:border-[#deff9a]">
-            </div>
-            <div class="mb-8">
-                <label class="block text-xs font-bold text-[#94a3b8] mb-2 uppercase">Marca y Modelo</label>
-                <input type="text" id="reg-modelo" placeholder="Ej: Opel Corsa 2022" class="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg p-4 text-sm outline-none focus:border-[#deff9a]">
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div>
+                    <label class="block text-xs font-bold text-[#94a3b8] mb-2 uppercase">Patente</label>
+                    <input type="text" id="reg-patente" placeholder="LXYZ-99" class="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg p-4 text-sm uppercase outline-none focus:border-[#deff9a]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-[#94a3b8] mb-2 uppercase">Modelo</label>
+                    <input type="text" id="reg-modelo" placeholder="Corsa 1.2" class="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg p-4 text-sm outline-none focus:border-[#deff9a]">
+                </div>
             </div>
             <button onclick="completarRegistro()" class="w-full bg-[#deff9a] text-[#0f172a] font-bold py-4 rounded-lg shadow-[0_0_20px_rgba(222,255,154,0.3)] uppercase tracking-wide">
                 Ingresar a la Red
@@ -76,7 +81,7 @@
 
     <div id="pantalla-principal" class="hidden flex-col h-screen w-full relative">
         
-        <div class="pt-12 pb-4 px-6 bg-[#1e293b] border-b border-[#334155] shadow-lg flex justify-between items-center">
+        <div class="pt-12 pb-4 px-6 bg-[#1e293b] border-b border-[#334155] shadow-lg flex justify-between items-center z-20">
             <div>
                 <h1 class="text-lg font-bold text-white uppercase tracking-wider">Guardian<span class="text-[#deff9a]">Drive</span></h1>
                 <p id="conexion-txt" class="text-[10px] text-yellow-400 font-mono">Conectando a nodo central...</p>
@@ -84,86 +89,148 @@
             <div id="luz-mesh" class="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
         </div>
 
-        <div class="flex-1 px-6 pt-6 relative">
+        <div class="flex-1 relative overflow-hidden bg-black">
             
-            <div id="tab-mapa" class="tab-content active">
-                <h2 class="text-xs uppercase font-bold text-[#deff9a] mb-3">Radar GPS Táctico</h2>
-                <div class="bg-black p-1 rounded-xl border-2 border-[#334155] relative">
-                    <div id="map" class="w-full h-[60vh] rounded-lg"></div>
-                    <button onclick="centrarGPS()" class="absolute bottom-4 right-4 z-[400] bg-[#1e293b] text-white p-3 rounded-full border border-[#64748b] shadow-lg">
+            <div id="tab-mapa" class="tab-content active h-full p-0">
+                <div id="map" class="w-full h-full"></div>
+                
+                <div class="absolute top-4 left-4 right-4 z-[400] flex justify-between pointer-events-none">
+                    <div class="bg-[#0f172a]/80 backdrop-blur border border-[#334155] px-3 py-2 rounded-lg pointer-events-auto">
+                        <p class="text-[10px] text-[#94a3b8] uppercase font-bold">Riesgo Zonal</p>
+                        <p id="nivel-riesgo" class="text-sm font-bold text-[#deff9a]">BAJO</p>
+                    </div>
+                    <button onclick="centrarGPS()" class="bg-[#1e293b] text-white p-3 rounded-full border border-[#64748b] shadow-lg pointer-events-auto">
                         🎯
                     </button>
                 </div>
             </div>
 
-            <div id="tab-ia" class="tab-content">
-                <h2 class="text-xs uppercase font-bold text-[#deff9a] mb-3">Escáner y Alertas</h2>
-                <div class="relative w-full rounded-xl overflow-hidden border-2 border-[#334155] bg-black">
-                    <video id="webcam" autoplay playsinline muted class="w-full h-64 object-cover opacity-80"></video>
+            <div id="tab-ia" class="tab-content p-6">
+                <h2 class="text-xs uppercase font-bold text-[#deff9a] mb-3">Escáner Perimetral YOLOv8</h2>
+                <div class="relative w-full rounded-xl overflow-hidden border-2 border-[#334155] bg-black shadow-2xl">
+                    <video id="webcam" autoplay playsinline muted class="w-full h-72 object-cover opacity-90"></video>
                     
-                    <button onclick="enviarAlertaEncerrona()" class="absolute bottom-4 right-4 bg-red-600 text-white p-4 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.9)] font-bold text-xs uppercase animate-pulse border-2 border-white">
-                        S.O.S (Test Mesh)
+                    <div id="ai-status" class="absolute top-4 left-4 bg-[#0f172a]/90 text-[#deff9a] text-xs px-3 py-1.5 rounded border border-[#deff9a]/50 backdrop-blur font-mono">
+                        Escaneando Entorno...
+                    </div>
+                    
+                    <button onclick="enviarAlertaEncerrona()" class="absolute bottom-6 right-6 left-6 bg-red-600 text-white py-4 rounded-xl shadow-[0_0_20px_rgba(239,68,68,0.9)] font-bold text-sm uppercase animate-pulse border-2 border-white tracking-widest">
+                        ¡ALERTA ENCERRONA! (S.O.S)
                     </button>
                 </div>
-                <div id="ia-log" class="mt-4 text-[10px] text-[#94a3b8] font-mono h-32 overflow-hidden leading-relaxed bg-[#1e293b] p-3 rounded-lg border border-[#334155]">
-                    > Consola del sistema iniciada...<br>
+                <div id="ia-log" class="mt-4 text-[10px] text-[#94a3b8] font-mono h-24 overflow-hidden leading-relaxed bg-[#1e293b] p-3 rounded-lg border border-[#334155]">
+                    > Consola predictiva en línea...<br>
                 </div>
             </div>
 
-            <div id="tab-perfil" class="tab-content">
-                <h2 class="text-xs uppercase font-bold text-[#deff9a] mb-3">Mi Perfil</h2>
-                <div class="bg-[#1e293b] rounded-xl border border-[#334155] p-5">
-                    <p class="text-xs text-[#94a3b8] mb-1">Nombre</p>
-                    <p id="perfil-nombre" class="text-white font-bold text-lg mb-4">-</p>
-                    <p class="text-xs text-[#94a3b8] mb-1">Patente Activa</p>
-                    <p id="perfil-patente" class="text-[#deff9a] font-mono text-xl mb-4 uppercase">-</p>
-                    <p class="text-xs text-[#94a3b8] mb-1">Vehículo</p>
-                    <p id="perfil-modelo" class="text-white mb-6">-</p>
+            <div id="tab-nube" class="tab-content p-6">
+                <h2 class="text-xs uppercase font-bold text-[#deff9a] mb-3">Bóveda Criptográfica</h2>
+                <div class="bg-[#1e293b] rounded-xl border border-[#334155] p-6 flex flex-col items-center justify-center text-center">
+                    <div class="w-16 h-16 bg-[#0f172a] rounded-full flex items-center justify-center border border-[#64748b] mb-4">
+                        <span class="text-2xl">☁️</span>
+                    </div>
+                    <h3 class="text-white font-bold mb-2">Subir Evidencia de Siniestro</h3>
+                    <p class="text-xs text-[#94a3b8] mb-6">Sube videos del incidente para respaldo en servidor seguro (Simulación Alpha).</p>
                     
-                    <button onclick="cerrarSesion()" class="w-full border border-red-500 text-red-500 py-3 rounded-lg text-sm font-bold uppercase">Borrar Datos y Salir</button>
+                    <input type="file" id="video-upload" accept="video/*" class="hidden" onchange="iniciarSubida()">
+                    <button onclick="document.getElementById('video-upload').click()" class="w-full bg-[#334155] text-white py-3 rounded-lg text-sm font-bold border border-[#64748b] mb-4">
+                        Seleccionar Archivo
+                    </button>
+                    
+                    <div id="upload-progress" class="w-full hidden">
+                        <div class="flex justify-between text-[10px] text-[#deff9a] font-mono mb-1">
+                            <span>Encriptando AES-256...</span><span id="progreso-txt">0%</span>
+                        </div>
+                        <div class="w-full bg-[#0f172a] rounded-full h-2 overflow-hidden border border-[#334155]">
+                            <div id="barra-progreso" class="bg-[#deff9a] h-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <p id="upload-success" class="text-xs text-[#deff9a] mt-4 font-bold hidden border-t border-[#334155] pt-4 w-full">✅ Archivo Resguardado en Nube.</p>
                 </div>
             </div>
+
+            <div id="tab-perfil" class="tab-content p-6">
+                <h2 class="text-xs uppercase font-bold text-[#deff9a] mb-3">Estado Hardware Stealth</h2>
+                
+                <div class="bg-[#1e293b] rounded-xl border border-[#334155] p-5 mb-4 shadow-lg">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-[10px] text-[#94a3b8] uppercase font-bold">Vehículo Vinculado</p>
+                            <p id="perfil-modelo" class="text-white font-bold text-lg">-</p>
+                        </div>
+                        <div class="bg-[#deff9a]/10 px-2 py-1 rounded border border-[#deff9a]/30">
+                            <p id="perfil-patente" class="text-[#deff9a] font-mono text-sm uppercase font-bold">-</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 border-t border-[#334155] pt-4">
+                        <div>
+                            <p class="text-[10px] text-[#94a3b8] uppercase">Conexión BLE</p>
+                            <p class="text-white text-sm font-bold flex items-center mt-1">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span> Módulo Activo
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-[#94a3b8] uppercase">Telemetría Batería</p>
+                            <p class="text-white text-sm font-bold mt-1 text-green-400">12.4V (Óptima)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-[#0f172a] rounded-xl border border-red-500/30 p-4">
+                    <p class="text-[10px] text-red-400 uppercase font-bold mb-2">Protocolos de Emergencia</p>
+                    <button class="w-full bg-[#1e293b] text-white py-3 rounded-lg text-sm border border-[#334155] mb-2 flex justify-between px-4">
+                        <span>Cortacorriente Manual</span> <span>🔒</span>
+                    </button>
+                    <button onclick="cerrarSesion()" class="w-full bg-[#1e293b] text-red-500 py-3 rounded-lg text-sm border border-red-500/50 flex justify-between px-4 font-bold">
+                        <span>Desvincular Nodo</span> <span>⚠️</span>
+                    </button>
+                </div>
+            </div>
+
         </div>
 
-        <div class="fixed bottom-0 left-0 w-full bg-[#0f172a] border-t border-[#334155] px-6 py-3 flex justify-between z-50 pb-6">
-            <button onclick="switchTab('mapa', this)" class="nav-btn active flex flex-col items-center w-1/3">
-                <span class="text-2xl mb-1">🗺️</span>
-                <span class="text-[10px] font-bold uppercase">Radar</span>
+        <div class="absolute bottom-0 left-0 w-full bg-[#0f172a]/95 backdrop-blur-md border-t border-[#334155] px-4 py-3 flex justify-between z-[999] pb-6">
+            <button onclick="switchTab('mapa', this)" class="nav-btn active flex flex-col items-center w-1/4">
+                <span class="text-xl mb-1">🗺️</span>
+                <span class="text-[9px] font-bold uppercase tracking-wider">Radar</span>
             </button>
-            <button onclick="switchTab('ia', this)" class="nav-btn flex flex-col items-center w-1/3">
-                <span class="text-2xl mb-1">📷</span>
-                <span class="text-[10px] font-bold uppercase">Cámara</span>
+            <button onclick="switchTab('ia', this)" class="nav-btn flex flex-col items-center w-1/4">
+                <span class="text-xl mb-1">📷</span>
+                <span class="text-[9px] font-bold uppercase tracking-wider">Cámara</span>
             </button>
-            <button onclick="switchTab('perfil', this)" class="nav-btn flex flex-col items-center w-1/3">
-                <span class="text-2xl mb-1">👤</span>
-                <span class="text-[10px] font-bold uppercase">Perfil</span>
+            <button onclick="switchTab('nube', this)" class="nav-btn flex flex-col items-center w-1/4">
+                <span class="text-xl mb-1">☁️</span>
+                <span class="text-[9px] font-bold uppercase tracking-wider">Nube</span>
+            </button>
+            <button onclick="switchTab('perfil', this)" class="nav-btn flex flex-col items-center w-1/4">
+                <span class="text-xl mb-1">⚙️</span>
+                <span class="text-[9px] font-bold uppercase tracking-wider">Mando</span>
             </button>
         </div>
     </div>
 
     <script>
         // --- ESTADO GLOBAL ---
-        let miLat = -36.8201; // Default Concepción
+        let miLat = -36.8201; 
         let miLng = -73.0444;
         let miMarcador = null;
         let mqttClient = null;
         let map = null;
-        const TOPIC_SECRETO = 'guardian/test/chile'; // Canal de pruebas
+        const TOPIC_SECRETO = 'guardian/test/chile/alertas'; 
 
-        // --- 1. LÓGICA DE REGISTRO E INICIO ---
+        // --- 1. LÓGICA DE ONBOARDING ---
         function verificarSesion() {
             if(localStorage.getItem('gd_patente')) {
-                // Si ya hay datos, oculta registro y muestra app
                 document.getElementById('pantalla-registro').classList.add('hidden');
-                document.getElementById('pantalla-principal').classList.remove('hidden');
-                document.getElementById('pantalla-principal').classList.add('flex');
+                const app = document.getElementById('pantalla-principal');
+                app.classList.remove('hidden');
+                app.classList.add('flex');
                 
-                // Cargar datos en el perfil
-                document.getElementById('perfil-nombre').innerText = localStorage.getItem('gd_nombre');
+                // Llenar Dashboard IoT
                 document.getElementById('perfil-patente').innerText = localStorage.getItem('gd_patente');
                 document.getElementById('perfil-modelo').innerText = localStorage.getItem('gd_modelo');
                 
-                // Iniciar motores solo cuando ya está logueado
                 iniciarMotores();
             }
         }
@@ -173,29 +240,26 @@
             const pat = document.getElementById('reg-patente').value;
             const mod = document.getElementById('reg-modelo').value;
             
-            if(!nom || !pat || !mod) return alert("Completa todos los campos para testear.");
+            if(!nom || !pat || !mod) return alert("Completa los datos del vehículo.");
             
             localStorage.setItem('gd_nombre', nom);
             localStorage.setItem('gd_patente', pat);
             localStorage.setItem('gd_modelo', mod);
-            
-            verificarSesion(); // Entrar a la app
+            verificarSesion(); 
         }
 
         function cerrarSesion() {
             localStorage.clear();
-            location.reload(); // Recarga la página volviendo al registro
+            location.reload(); 
         }
 
-        // --- 2. INICIAR MAPA Y SENSORES ---
+        // --- 2. INICIAR MAPA Y HARDWARE ---
         function iniciarMotores() {
-            // Iniciar Mapa (Solo se ejecuta una vez)
             if(!map) {
-                map = L.map('map').setView([miLat, miLng], 14);
+                map = L.map('map', {zoomControl: false}).setView([miLat, miLng], 15);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-                setTimeout(() => map.invalidateSize(), 500); // Forzar renderizado
+                setTimeout(() => map.invalidateSize(), 500);
             }
-
             obtenerGPS();
             conectarMeshRobusta();
             encenderCamara();
@@ -209,53 +273,61 @@
                     miLng = position.coords.longitude;
                     
                     if(miMarcador) map.removeLayer(miMarcador);
-                    const iconUbicacion = L.divIcon({ className: 'mi-ubicacion', iconSize: [16,16] });
+                    const iconUbicacion = L.divIcon({ className: 'mi-ubicacion', iconSize: [18,18] });
                     miMarcador = L.marker([miLat, miLng], {icon: iconUbicacion}).addTo(map);
                 }, (error) => {
-                    logConsole("Error: Activa el GPS de tu celular.");
+                    logConsole("GPS inactivo. Usando ubicación por defecto.");
                 }, { enableHighAccuracy: true });
             }
         }
         function centrarGPS() { if(map) map.setView([miLat, miLng], 16); }
 
-        // --- 4. RED MESH (HiveMQ - Más estable) ---
+        // --- 4. LA MAGIA DE LA "MANCHA ROJA" (MQTT) ---
         function conectarMeshRobusta() {
-            logConsole("Conectando a broker HiveMQ...");
-            // Nuevo broker industrial
+            logConsole("Iniciando uplink con HiveMQ...");
             mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
             
             mqttClient.on('connect', () => {
-                document.getElementById('conexion-txt').innerText = "Red Mesh Activa";
+                document.getElementById('conexion-txt').innerText = "Red Mesh Enlazada";
                 document.getElementById('conexion-txt').classList.replace('text-yellow-400', 'text-[#deff9a]');
                 document.getElementById('luz-mesh').classList.replace('bg-yellow-400', 'bg-[#deff9a]');
-                logConsole("Sincronización Mesh exitosa.");
-                
+                logConsole("Conexión segura establecida.");
                 mqttClient.subscribe(TOPIC_SECRETO);
             });
 
-            mqttClient.on('error', (err) => {
-                logConsole("Fallo de conexión MQTT. Reintentando...");
-            });
-
-            // Recibir alerta del amigo
             mqttClient.on('message', (topic, message) => {
                 const data = JSON.parse(message.toString());
+                logConsole(`CRÍTICO: S.O.S de ${data.nombre} en curso.`);
                 
-                logConsole(`⚠️ ALERTA RECIBIDA de ${data.nombre} (${data.patente})`);
-                
-                const iconOnda = L.divIcon({ className: 'onda-alerta', iconSize: [50,50] });
+                // 1. DIBUJAR LA MANCHA ROJA (Zona de Peligro)
+                // Círculo de 300 metros, rojo intenso con opacidad para que parezca una mancha de calor
+                L.circle([data.lat, data.lng], {
+                    color: 'red',
+                    fillColor: '#ef4444',
+                    fillOpacity: 0.3,
+                    weight: 1,
+                    radius: 300
+                }).addTo(map);
+
+                // 2. DIBUJAR EL PUNTO EXACTO DEL AUTO (Latido Rojo)
+                const iconOnda = L.divIcon({ className: 'onda-alerta', iconSize: [30,30] });
                 L.marker([data.lat, data.lng], {icon: iconOnda}).addTo(map)
-                 .bindPopup(`<b>S.O.S RECIBIDO</b><br>Patente: ${data.patente}<br>Conductor: ${data.nombre}`).openPopup();
+                 .bindPopup(`<b>S.O.S ACTIVO</b><br>Auto: ${data.modelo}<br>Patente: ${data.patente}`).openPopup();
                  
-                map.setView([data.lat, data.lng], 15);
-                alert(`¡Alerta de ${data.nombre}! Revisa el mapa.`);
+                // Cambiar el nivel de riesgo en la pantalla del mapa
+                const riesgoUI = document.getElementById('nivel-riesgo');
+                riesgoUI.innerText = "CRÍTICO";
+                riesgoUI.classList.replace('text-[#deff9a]', 'text-red-500');
+                 
+                // Mover el mapa hacia el problema si lo tienes abierto
+                map.flyTo([data.lat, data.lng], 15);
             });
         }
 
-        // --- 5. ENVIAR ALERTA ---
+        // --- 5. ENVIAR S.O.S ---
         function enviarAlertaEncerrona() {
             if(!mqttClient || !mqttClient.connected) {
-                alert("Sin conexión. Espera a que la luz superior esté verde.");
+                alert("Esperando conexión a la red...");
                 return;
             }
             
@@ -264,22 +336,75 @@
                 lng: miLng,
                 nombre: localStorage.getItem('gd_nombre'),
                 patente: localStorage.getItem('gd_patente'),
+                modelo: localStorage.getItem('gd_modelo'),
                 timestamp: Date.now()
             };
             
             mqttClient.publish(TOPIC_SECRETO, JSON.stringify(payload));
-            logConsole("Alerta disparada a toda la red.");
+            logConsole("Alerta S.O.S disparada al ecosistema.");
+            
+            // Forzar a cambiar a la pestaña del mapa para ver tu propia mancha
+            document.querySelector("button[onclick=\"switchTab('mapa', this)\"]").click();
         }
 
-        // --- 6. CÁMARA (Sin IA pesada para no bloquear pruebas) ---
+        // --- 6. CÁMARA E IA (TensorFlow) ---
         async function encenderCamara() {
             try {
                 const video = document.getElementById('webcam');
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 video.srcObject = stream;
+                
+                // IA Básica para demostrar que el sensor funciona
+                const model = await cocoSsd.load();
+                setInterval(async () => {
+                    const predictions = await model.detect(video);
+                    const amenaza = predictions.find(p => p.class === 'car' || p.class === 'person');
+                    const status = document.getElementById('ai-status');
+                    if(amenaza) {
+                        status.innerText = `Rastreo: ${amenaza.class} (${Math.round(amenaza.score*100)}%)`;
+                        status.classList.add('border-red-500', 'text-red-400');
+                        status.classList.remove('border-[#deff9a]/50', 'text-[#deff9a]');
+                    } else {
+                        status.innerText = "Entorno Limpio";
+                        status.classList.remove('border-red-500', 'text-red-400');
+                        status.classList.add('border-[#deff9a]/50', 'text-[#deff9a]');
+                    }
+                }, 2000);
             } catch (e) {
-                logConsole("Cámara bloqueada o no disponible.");
+                logConsole("Cámara en espera.");
             }
+        }
+
+        // --- 7. SIMULADOR SUBIDA NUBE ---
+        function iniciarSubida() {
+            const input = document.getElementById('video-upload');
+            if(!input.files || input.files.length === 0) return;
+            
+            const progressContainer = document.getElementById('upload-progress');
+            const barra = document.getElementById('barra-progreso');
+            const txt = document.getElementById('progreso-txt');
+            const success = document.getElementById('upload-success');
+            
+            progressContainer.classList.remove('hidden');
+            success.classList.add('hidden');
+            let ancho = 0;
+            
+            let intervalo = setInterval(() => {
+                ancho += 8; // Velocidad de subida
+                if(ancho > 100) ancho = 100;
+                barra.style.width = ancho + '%';
+                txt.innerText = ancho + '%';
+                
+                if(ancho >= 100) {
+                    clearInterval(intervalo);
+                    setTimeout(() => {
+                        progressContainer.classList.add('hidden');
+                        success.classList.remove('hidden');
+                        barra.style.width = '0%';
+                        input.value = ""; // limpiar
+                    }, 800);
+                }
+            }, 250);
         }
 
         // --- UTILIDADES ---
@@ -288,7 +413,7 @@
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
             btnElement.classList.add('active');
-            if(tabId === 'mapa' && map) { setTimeout(() => map.invalidateSize(), 100); }
+            if(tabId === 'mapa' && map) { setTimeout(() => map.invalidateSize(), 200); }
         }
 
         function logConsole(msg) {

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Guardian Drive Alpha - Tactical State Machine</title>
+    <title>Guardian Drive Alpha - Master Edition</title>
     
     <link rel="manifest" href="./manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,20 +19,23 @@
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
     <style>
-        body { background-color: #0f172a; color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        body { background-color: #0f172a; color: #f1f5f9; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         .tab-content { display: none; height: 100%; width: 100%; overflow-y: auto; padding-bottom: 90px; }
         .tab-content.active { display: block; }
         .nav-btn.active { color: #deff9a; }
         .nav-btn { color: #64748b; transition: all 0.3s ease; }
         
+        /* Map Animations */
         .onda-alerta { width: 30px; height: 30px; background-color: #ef4444; border: 3px solid white; border-radius: 50%; animation: latido-rojo 1s infinite; box-shadow: 0 0 20px #ef4444; }
         @keyframes latido-rojo { 0% { transform: scale(0.8); } 50% { transform: scale(1.3); } 100% { transform: scale(0.8); } }
         .mi-ubicacion { width: 18px; height: 18px; background-color: #3b82f6; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 20px #3b82f6; z-index: 1000 !important; transition: all 0.5s ease; }
-        .nodo-aliado { width: 10px; height: 10px; background-color: #deff9a; border-radius: 50%; opacity: 0.6; box-shadow: 0 0 10px #deff9a; }
+        .nodo-aliado { width: 10px; height: 10px; background-color: #3b82f6; border-radius: 50%; opacity: 0.7; box-shadow: 0 0 10px #3b82f6; animation: pulse-blue 2s infinite alternate;}
+        @keyframes pulse-blue { 0% { opacity: 0.4; transform: scale(0.8); } 100% { opacity: 0.9; transform: scale(1.2); } }
+        
         .hud-panel { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(51, 65, 85, 0.8); }
         .leaflet-routing-container { display: none !important; }
 
-        /* Toast Notifications */
+        /* Toasts */
         #toast-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; gap: 10px; width: 90%; pointer-events: none; }
         .toast { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); border-left: 4px solid #deff9a; padding: 15px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; gap: 10px; pointer-events: auto; }
         .toast.critical { border-left-color: #ef4444; }
@@ -50,12 +53,12 @@
     <div id="pantalla-registro" class="absolute top-0 left-0 w-full h-screen bg-[#0f172a] z-[9999] flex flex-col justify-center px-8">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-white tracking-widest uppercase mb-1">Guardian<span class="text-[#deff9a]">Drive</span></h1>
-            <p class="text-[#64748b] text-sm">Creación de Identidad Digital</p>
+            <p class="text-[#64748b] text-sm">Validación Red Mesh Alpha</p>
         </div>
         <div class="bg-[#1e293b] p-6 rounded-2xl border border-[#334155] shadow-2xl">
             <div class="mb-4">
                 <label class="block text-xs font-bold text-[#94a3b8] mb-2 uppercase">Conductor</label>
-                <input type="text" id="reg-nombre" placeholder="Jorge Ceballos Segura" class="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg p-3 text-sm outline-none focus:border-[#deff9a]">
+                <input type="text" id="reg-nombre" value="Jorge Ceballos Segura" class="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg p-3 text-sm outline-none focus:border-[#deff9a]">
             </div>
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
@@ -64,16 +67,15 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-[#94a3b8] mb-2 uppercase">Modelo</label>
-                    <input type="text" id="reg-modelo" placeholder="Opel Corsa 1.2" class="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg p-3 text-sm outline-none focus:border-[#deff9a]">
+                    <input type="text" id="reg-modelo" value="Opel Corsa 1.2" class="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg p-3 text-sm outline-none focus:border-[#deff9a]">
                 </div>
             </div>
             <div class="mb-6">
-                <label class="block text-xs font-bold text-[#deff9a] mb-2 uppercase">PIN de Vida (4 dígitos)</label>
-                <input type="password" id="reg-pin" placeholder="****" maxlength="4" pattern="\d{4}" class="w-full bg-[#0f172a] border border-[#deff9a] text-white rounded-lg p-3 text-center text-xl tracking-[1em] outline-none focus:shadow-[0_0_10px_rgba(222,255,154,0.3)]">
-                <p class="text-[9px] text-gray-400 mt-1 text-center">Se solicitará para confirmar que estás a salvo.</p>
+                <label class="block text-xs font-bold text-[#deff9a] mb-2 uppercase">PIN de Seguridad (4 dígitos)</label>
+                <input type="password" id="reg-pin" placeholder="****" maxlength="4" class="w-full bg-[#0f172a] border border-[#deff9a] text-white rounded-lg p-3 text-center text-xl tracking-[1em] outline-none">
             </div>
             <button onclick="completarRegistro()" class="w-full bg-[#deff9a] text-[#0f172a] font-bold py-4 rounded-lg uppercase tracking-wide">
-                Establecer Identidad
+                Iniciar Ecosistema
             </button>
         </div>
     </div>
@@ -81,8 +83,8 @@
     <div id="pantalla-pin" class="absolute top-0 left-0 w-full h-screen bg-[#ef4444] z-[99999] hidden flex-col justify-center items-center px-6 transition-all duration-500">
         <div class="bg-[#0f172a] w-full max-w-sm rounded-3xl p-8 flex flex-col items-center shadow-2xl border border-red-500/50">
             <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center animate-pulse mb-4 text-3xl">🛡️</div>
-            <h2 class="text-white text-xl font-bold uppercase mb-1">Validación de Vida</h2>
-            <p class="text-[#94a3b8] text-xs text-center mb-6">Ingresa tu PIN de seguridad para confirmar que evadiste la encerrona y estás a salvo.</p>
+            <h2 class="text-white text-xl font-bold uppercase mb-1">Confirmación de Vida</h2>
+            <p class="text-[#94a3b8] text-xs text-center mb-6">Ingresa tu PIN para confirmar que evadiste el incidente a salvo.</p>
             
             <div class="flex gap-4 mb-8">
                 <div class="w-4 h-4 rounded-full border-2 border-white" id="pin-dot-1"></div>
@@ -103,38 +105,33 @@
                 <button onclick="digitarPin(9)" class="pin-btn">9</button>
                 <button onclick="limpiarPin()" class="text-red-400 font-bold uppercase text-xs">Borrar</button>
                 <button onclick="digitarPin(0)" class="pin-btn">0</button>
-                <button onclick="ignorarPin()" class="text-[#64748b] font-bold uppercase text-[9px] leading-tight">Botón de<br>Pánico</button>
+                <button onclick="ignorarPin()" class="text-[#64748b] font-bold uppercase text-[9px] leading-tight">Fui<br>Asaltado</button>
             </div>
         </div>
     </div>
 
     <div id="modal-sos" class="absolute inset-0 bg-black/80 backdrop-blur-sm z-[9000] hidden flex-col justify-end pb-10 px-4 transition-all">
         <div class="bg-[#1e293b] w-full rounded-3xl p-6 border border-red-500/30 shadow-[0_0_40px_rgba(239,68,68,0.3)] animate-slideUp">
-            <h3 class="text-red-400 font-black text-xl mb-2 text-center uppercase">⚠️ Alerta Disparada</h3>
-            <p class="text-white text-sm text-center mb-6">El protocolo ha iniciado. Selecciona tu estado actual para informar a la red:</p>
+            <h3 class="text-red-400 font-black text-xl mb-2 text-center uppercase">⚠️ Alerta Máxima</h3>
+            <p class="text-white text-sm text-center mb-6">Selecciona el estado actual del incidente:</p>
             
-            <button onclick="ejecutarRobo()" class="w-full bg-red-600 text-white font-bold py-4 rounded-xl mb-4 text-sm uppercase tracking-wider flex justify-between px-6 items-center shadow-lg active:scale-95 transition-all">
-                <span>Me Robaron el Vehículo</span> <span>🚘🚨</span>
+            <button onclick="ejecutarRobo()" class="w-full bg-red-600 text-white font-bold py-4 rounded-xl mb-4 text-sm uppercase flex justify-between px-6 items-center shadow-lg active:scale-95 transition-all">
+                <span>Me Robaron el Auto</span> <span>🚨</span>
             </button>
-            
-            <button onclick="ejecutarEscape()" class="w-full bg-[#deff9a] text-[#0f172a] font-bold py-4 rounded-xl text-sm uppercase tracking-wider flex justify-between px-6 items-center shadow-lg active:scale-95 transition-all">
-                <span>Logré Escapar a Salvo</span> <span>🏃💨</span>
+            <button onclick="ejecutarEscape()" class="w-full bg-[#deff9a] text-[#0f172a] font-bold py-4 rounded-xl text-sm uppercase flex justify-between px-6 items-center shadow-lg active:scale-95 transition-all">
+                <span>Logré Escapar a Salvo</span> <span>🏃</span>
             </button>
-            
-            <button onclick="cancelarSOS()" class="w-full mt-4 text-[#64748b] text-xs uppercase font-bold py-2 text-center">
-                Cancelar Falsa Alarma
-            </button>
+            <button onclick="cancelarSOS()" class="w-full mt-4 text-[#64748b] text-xs uppercase font-bold py-2 text-center">Cancelar Alarma</button>
         </div>
     </div>
 
-
     <div id="pantalla-principal" class="hidden flex-col h-full w-full">
-        <div class="pt-10 pb-3 px-5 bg-[#1e293b] border-b border-[#334155] shadow-lg flex justify-between items-center z-20">
+        <div class="pt-10 pb-3 px-5 bg-[#1e293b] border-b border-[#334155] flex justify-between items-center z-20">
             <div>
                 <h1 class="text-sm font-black text-white uppercase tracking-widest">Guardian<span class="text-[#deff9a]">Drive</span></h1>
                 <div class="flex items-center mt-1">
                     <div id="luz-mesh" class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse mr-2"></div>
-                    <p id="conexion-txt" class="text-[10px] text-yellow-400 font-mono tracking-wider">Buscando Nodos...</p>
+                    <p id="conexion-txt" class="text-[10px] text-yellow-400 font-mono tracking-wider">Conectando Mesh...</p>
                 </div>
             </div>
             <div class="text-right">
@@ -144,17 +141,18 @@
         </div>
 
         <div class="flex-1 relative overflow-hidden bg-black">
+            
             <div id="tab-mapa" class="tab-content active p-0 relative">
                 <div id="map" class="w-full h-full absolute inset-0 z-0"></div>
                 <div class="absolute top-4 left-4 right-4 z-[400]">
                     <div class="hud-panel p-2 rounded-xl flex gap-2 shadow-xl items-center">
                         <span class="pl-2">📍</span>
-                        <input type="text" id="input-destino" placeholder="Ruta Segura..." class="w-full bg-transparent text-white text-xs outline-none px-2 placeholder-[#64748b]">
+                        <input type="text" id="input-destino" placeholder="Ruta Segura a destino..." class="w-full bg-transparent text-white text-xs outline-none px-2 placeholder-[#64748b]">
                         <button onclick="trazarRutaSegura()" class="bg-[#deff9a] text-[#0f172a] text-xs font-bold px-3 py-2 rounded-lg">Ir</button>
                     </div>
                 </div>
                 <div class="absolute bottom-6 left-4 z-[400] hud-panel px-3 py-2 rounded-lg">
-                    <p class="text-[9px] text-[#94a3b8] uppercase font-bold">Estado Zonal</p>
+                    <p class="text-[9px] text-[#94a3b8] uppercase font-bold">Riesgo Zonal</p>
                     <p id="nivel-riesgo" class="text-sm font-black text-[#deff9a] tracking-widest">SEGURO</p>
                 </div>
                 <button onclick="centrarGPS()" class="absolute bottom-6 right-4 z-[400] hud-panel text-white p-3 rounded-full shadow-lg">🎯</button>
@@ -163,17 +161,39 @@
             <div id="tab-ia" class="tab-content p-6">
                 <div class="relative w-full rounded-xl overflow-hidden border border-[#334155] bg-black shadow-2xl h-72">
                     <video id="webcam" autoplay playsinline muted class="w-full h-full object-cover opacity-90"></video>
-                    <div id="ai-status" class="absolute top-3 left-3 hud-panel text-[#deff9a] text-[10px] px-3 py-1 rounded font-mono uppercase tracking-wider">Analizando Vector...</div>
+                    <div id="ai-status" class="absolute top-3 left-3 hud-panel text-[#deff9a] text-[10px] px-3 py-1 rounded font-mono uppercase tracking-wider">Predictivo Edge Activo</div>
                     <button onclick="abrirModalSOS()" class="absolute bottom-5 right-5 left-5 bg-red-600/90 text-white py-4 rounded-xl shadow-[0_0_25px_rgba(239,68,68,0.8)] font-black text-sm uppercase animate-pulse border border-red-400">
-                        ⚠️ ¡ALERTA S.O.S!
+                        ⚠️ S.O.S EMERGENCIA
                     </button>
                 </div>
-                <div id="ia-log" class="mt-4 text-[10px] text-[#94a3b8] font-mono h-32 overflow-y-auto hud-panel p-3 rounded-lg leading-relaxed flex flex-col-reverse">
-                    <div>> Sistema activo. Motor predictivo OK.</div>
+                <div id="ia-log" class="mt-4 text-[10px] text-[#94a3b8] font-mono h-32 overflow-y-auto hud-panel p-3 rounded-lg flex flex-col-reverse">
+                    <div>> Escaneo en tiempo real inicializado.</div>
+                </div>
+            </div>
+
+            <div id="tab-nube" class="tab-content p-6">
+                <h2 class="text-xs uppercase font-bold text-[#deff9a] mb-3">Bóveda Criptográfica</h2>
+                <div class="hud-panel rounded-xl p-8 flex flex-col items-center text-center mt-4 border border-[#334155]">
+                    <div class="w-16 h-16 bg-[#0f172a] rounded-full flex items-center justify-center border border-[#64748b] mb-4 shadow-lg"><span class="text-2xl">☁️</span></div>
+                    <h3 class="text-white font-bold mb-2">Evidencia de Siniestros</h3>
+                    <p class="text-xs text-[#94a3b8] mb-8">Sube archivos locales. Encriptación AES-256 hacia Fiscalía.</p>
+                    <input type="file" id="video-upload" class="hidden" onchange="iniciarSubida()">
+                    <button onclick="document.getElementById('video-upload').click()" class="w-full bg-[#334155] hover:bg-[#475569] text-white py-4 rounded-lg text-sm font-bold border border-[#64748b] mb-4 uppercase tracking-wider transition-all">Seleccionar Archivo</button>
+                    
+                    <div id="upload-progress" class="w-full hidden mt-2">
+                        <div class="flex justify-between text-[10px] text-[#deff9a] font-mono mb-2 uppercase">
+                            <span>Sincronizando...</span><span id="progreso-txt">0%</span>
+                        </div>
+                        <div class="w-full bg-[#0f172a] rounded-full h-2 overflow-hidden border border-[#334155]">
+                            <div id="barra-progreso" class="bg-[#deff9a] h-full transition-all" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div id="tab-perfil" class="tab-content p-6">
+                <h2 class="text-xs uppercase font-bold text-[#deff9a] mb-4">Ajustes & Mando Stealth</h2>
+                
                 <div class="hud-panel rounded-xl p-5 mb-5 shadow-lg border-l-4 border-l-[#deff9a]">
                     <div class="flex justify-between items-start">
                         <div>
@@ -186,262 +206,235 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="hud-panel rounded-xl p-5 mb-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <div><p class="text-sm text-white">Sensibilidad YOLOv8</p><p class="text-[9px] text-[#94a3b8]">Detección IA Alta</p></div>
+                        <div class="w-10 h-5 bg-[#deff9a] rounded-full relative cursor-pointer"><div class="absolute right-1 top-0.5 w-4 h-4 bg-[#0f172a] rounded-full"></div></div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div><p class="text-sm text-white">Voz Antitrauma</p><p class="text-[9px] text-[#94a3b8]">Asistente de emergencias</p></div>
+                        <div class="w-10 h-5 bg-[#deff9a] rounded-full relative cursor-pointer"><div class="absolute right-1 top-0.5 w-4 h-4 bg-[#0f172a] rounded-full"></div></div>
+                    </div>
+                </div>
                 
                 <div class="bg-[#0f172a] rounded-xl border border-red-500/30 p-4 shadow-lg mb-8">
                     <button id="btn-corte" onclick="simularCortacorriente()" class="w-full bg-[#1e293b] text-red-400 py-4 rounded-lg text-xs border border-red-500/40 mb-3 font-bold uppercase tracking-widest transition-all">
                         Cortacorriente Manual ⚡
                     </button>
-                    <button onclick="cerrarSesion()" class="w-full text-[#64748b] py-3 border border-[#334155] rounded-lg text-[10px] uppercase font-bold">Borrar Datos App</button>
+                    <button onclick="cerrarSesion()" class="w-full text-[#64748b] py-3 border border-[#334155] rounded-lg text-[10px] uppercase font-bold">Restablecer Sistema (Logout)</button>
                 </div>
             </div>
         </div>
 
         <div class="absolute bottom-0 left-0 w-full bg-[#0f172a]/95 backdrop-blur-md border-t border-[#334155] px-2 py-2 flex justify-around z-[999] pb-6">
-            <button onclick="switchTab('mapa', this)" class="nav-btn active flex flex-col items-center p-2 w-1/3"><span class="text-xl mb-1">🗺️</span><span class="text-[9px] font-bold uppercase tracking-wider">Radar</span></button>
-            <button onclick="switchTab('ia', this)" class="nav-btn flex flex-col items-center p-2 w-1/3"><span class="text-xl mb-1">📷</span><span class="text-[9px] font-bold uppercase tracking-wider">Escáner</span></button>
-            <button onclick="switchTab('perfil', this)" class="nav-btn flex flex-col items-center p-2 w-1/3"><span class="text-xl mb-1">⚙️</span><span class="text-[9px] font-bold uppercase tracking-wider">Mando</span></button>
+            <button onclick="switchTab('mapa', this)" class="nav-btn active flex flex-col items-center p-2 w-1/4"><span class="text-xl mb-1">🗺️</span><span class="text-[9px] font-bold uppercase tracking-wider">Radar</span></button>
+            <button onclick="switchTab('ia', this)" class="nav-btn flex flex-col items-center p-2 w-1/4"><span class="text-xl mb-1">📷</span><span class="text-[9px] font-bold uppercase tracking-wider">Escáner</span></button>
+            <button onclick="switchTab('nube', this)" class="nav-btn flex flex-col items-center p-2 w-1/4"><span class="text-xl mb-1">☁️</span><span class="text-[9px] font-bold uppercase tracking-wider">Nube</span></button>
+            <button onclick="switchTab('perfil', this)" class="nav-btn flex flex-col items-center p-2 w-1/4"><span class="text-xl mb-1">⚙️</span><span class="text-[9px] font-bold uppercase tracking-wider">Mando</span></button>
         </div>
     </div>
 
     <script>
         // --- ESTADO GLOBAL ---
-        let miLat = -36.8201, miLng = -73.0444;
+        let miLat = -36.8201, miLng = -73.0444; // Default Concepción
         let miMarcador = null, mqttClient = null, map = null, controlRuta = null;
-        let pinIngresado = "";
-        let checkinTimer = null;
+        let pinIngresado = "", checkinTimer = null;
         const TOPIC_SECRETO = 'guardian/test/chile/alertas'; 
 
-        // --- UI NOTIFICACIONES TOAST ---
+        // --- TOASTS DE SISTEMA ---
         function mostrarToast(titulo, mensaje, critica = false) {
             const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast ${critica ? 'critical' : ''}`;
-            toast.innerHTML = `
-                <div class="text-2xl">${critica ? '🚨' : '🛡️'}</div>
-                <div>
-                    <h4 class="text-white text-xs font-bold uppercase">${titulo}</h4>
-                    <p class="text-[#94a3b8] text-[10px] leading-tight">${mensaje}</p>
-                </div>
-            `;
-            container.appendChild(toast);
-            if('vibrate' in navigator) navigator.vibrate(critica ? [200, 100, 200] : 100);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 5000);
+            const t = document.createElement('div');
+            t.className = `toast ${critica ? 'critical' : ''}`;
+            t.innerHTML = `<div class="text-2xl">${critica?'🚨':'🛡️'}</div><div><h4 class="text-white text-xs font-bold uppercase">${titulo}</h4><p class="text-[#94a3b8] text-[10px] leading-tight">${mensaje}</p></div>`;
+            container.appendChild(t);
+            if('vibrate' in navigator) navigator.vibrate(critica ? [200,100,200] : 100);
+            setTimeout(() => { t.style.opacity = '0'; setTimeout(()=>t.remove(), 500); }, 5000);
         }
 
-        // --- 1. GATEKEEPER & IDENTIDAD ---
+        // --- GATEKEEPER ---
         function verificarSesion() {
             if(localStorage.getItem('gd_pin')) {
                 document.getElementById('pantalla-registro').classList.add('hidden');
                 document.getElementById('pantalla-principal').classList.remove('hidden');
                 document.getElementById('pantalla-principal').classList.add('flex');
                 
-                document.getElementById('perfil-nombre').innerText = localStorage.getItem('gd_nombre') || "Jorge Ceballos Segura";
-                document.getElementById('perfil-patente').innerText = localStorage.getItem('gd_patente') || "LXYZ-99";
-                document.getElementById('perfil-modelo').innerText = localStorage.getItem('gd_modelo') || "Opel Corsa 1.2";
+                document.getElementById('perfil-nombre').innerText = localStorage.getItem('gd_nombre');
+                document.getElementById('perfil-patente').innerText = localStorage.getItem('gd_patente');
+                document.getElementById('perfil-modelo').innerText = localStorage.getItem('gd_modelo');
                 
                 iniciarMotores();
-                mostrarToast("Sistema Armado", "El módulo Stealth está sincronizado con tu perfil.");
+                mostrarToast("Sistema Armado", "Ecosistema sincronizado y protegiendo tu ruta.");
             }
         }
 
         function completarRegistro() {
-            const nom = document.getElementById('reg-nombre').value;
-            const pat = document.getElementById('reg-patente').value;
-            const mod = document.getElementById('reg-modelo').value;
-            const pin = document.getElementById('reg-pin').value;
-            if(!pin || pin.length !== 4) return alert("El PIN debe ser de 4 dígitos.");
-            
-            localStorage.setItem('gd_nombre', nom);
-            localStorage.setItem('gd_patente', pat);
-            localStorage.setItem('gd_modelo', mod);
-            localStorage.setItem('gd_pin', pin);
+            const nom = document.getElementById('reg-nombre').value, pat = document.getElementById('reg-patente').value, mod = document.getElementById('reg-modelo').value, pin = document.getElementById('reg-pin').value;
+            if(!pat || pin.length !== 4) return alert("Verifica patente y PIN de 4 dígitos.");
+            localStorage.setItem('gd_nombre', nom); localStorage.setItem('gd_patente', pat); localStorage.setItem('gd_modelo', mod); localStorage.setItem('gd_pin', pin);
             verificarSesion(); 
         }
 
         function cerrarSesion() { localStorage.clear(); location.reload(); }
 
-        // --- 2. MAPA E IA ---
+        // --- MOTORES (MAPA, RUTAS, ZONAS) ---
         function iniciarMotores() {
             if(!map) {
-                map = L.map('map', {zoomControl: false}).setView([miLat, miLng], 15);
+                map = L.map('map', {zoomControl: false}).setView([miLat, miLng], 14);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
             }
-            obtenerGPS();
-            conectarMeshRobusta();
-            encenderCamara();
+            obtenerGPS(); conectarMeshRobusta(); encenderCamara();
         }
 
         function obtenerGPS() {
             if ("geolocation" in navigator) {
                 navigator.geolocation.watchPosition((position) => {
-                    miLat = position.coords.latitude;
-                    miLng = position.coords.longitude;
+                    const inicial = (miMarcador === null);
+                    miLat = position.coords.latitude; miLng = position.coords.longitude;
                     if(miMarcador) map.removeLayer(miMarcador);
-                    const iconUbicacion = L.divIcon({ className: 'mi-ubicacion', iconSize: [18,18] });
-                    miMarcador = L.marker([miLat, miLng], {icon: iconUbicacion}).addTo(map);
-                }, () => { logConsola("GPS inactivo."); }, { enableHighAccuracy: true });
+                    const iconU = L.divIcon({ className: 'mi-ubicacion', iconSize: [18,18] });
+                    miMarcador = L.marker([miLat, miLng], {icon: iconU}).addTo(map);
+                    if(inicial) { generarZonasAmarillas(); generarEnjambreMesh(); map.setView([miLat, miLng], 14); }
+                }, () => { logConsola("GPS bloqueado."); }, { enableHighAccuracy: true });
             }
         }
         function centrarGPS() { if(map) map.flyTo([miLat, miLng], 15); }
 
+        function generarZonasAmarillas() {
+            for(let i=0; i<3; i++) {
+                let offLat = (Math.random() - 0.5) * 0.03, offLng = (Math.random() - 0.5) * 0.03;
+                L.circle([miLat + offLat, miLng + offLng], { color: '#eab308', fillColor: '#eab308', fillOpacity: 0.25, weight: 1, radius: 400 }).addTo(map).bindPopup("<b>⚠️ Zona Histórica:</b><br>Riesgo alto de encerronas.");
+            }
+        }
+
+        function generarEnjambreMesh() {
+            const iconA = L.divIcon({ className: 'nodo-aliado', iconSize: [12,12] });
+            for(let i=0; i<8; i++) { L.marker([miLat + (Math.random()-0.5)*0.02, miLng + (Math.random()-0.5)*0.02], {icon: iconA}).addTo(map); }
+        }
+
         function trazarRutaSegura() {
+            if(document.getElementById('input-destino').value.trim() === "") return alert("Indica un destino.");
             if(controlRuta) map.removeControl(controlRuta);
-            mostrarToast("Navegación", "Calculando ruta segura evadiendo zonas rojas...");
-            let destLat = miLat + 0.02, destLng = miLng + 0.02;
-            controlRuta = L.Routing.control({
-                waypoints: [ L.latLng(miLat, miLng), L.latLng(destLat, destLng) ],
-                show: false, addWaypoints: false, lineOptions: { styles: [{color: '#deff9a', opacity: 0.9, weight: 5}] }
-            }).addTo(map);
+            mostrarToast("Waze Security", "Trazando ruta segura. Esquivando zonas rojas y amarillas...");
+            let destLat = miLat + 0.03, destLng = miLng + 0.03;
+            controlRuta = L.Routing.control({ waypoints: [ L.latLng(miLat, miLng), L.latLng(destLat, destLng) ], show: false, addWaypoints: false, lineOptions: { styles: [{color: '#3b82f6', opacity: 0.9, weight: 6}] }, createMarker: ()=>null }).addTo(map);
         }
 
         function conectarMeshRobusta() {
             mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
             mqttClient.on('connect', () => {
-                document.getElementById('conexion-txt').innerText = "Enlace Seguro";
+                document.getElementById('conexion-txt').innerText = "Red Mesh Enlazada";
                 document.getElementById('conexion-txt').classList.replace('text-yellow-400', 'text-[#deff9a]');
                 document.getElementById('luz-mesh').classList.replace('bg-yellow-400', 'bg-[#deff9a]');
                 mqttClient.subscribe(TOPIC_SECRETO);
             });
+            mqttClient.on('message', (t, m) => {
+                const data = JSON.parse(m.toString());
+                if(data.patente === localStorage.getItem('gd_patente')) return; // No auto-alerta
+                // Mancha Roja Mesh
+                L.circle([data.lat, data.lng], { color: 'red', fillColor: '#ef4444', fillOpacity: 0.35, weight: 1, radius: 300 }).addTo(map);
+                const iconOnda = L.divIcon({ className: 'onda-alerta', iconSize: [30,30] });
+                L.marker([data.lat, data.lng], {icon: iconOnda}).addTo(map);
+                mostrarToast("ALERTA COMUNITARIA", `Vehículo reportado en S.O.S: ${data.patente}`, true);
+                document.getElementById('nivel-riesgo').innerText = "CRÍTICO";
+                document.getElementById('nivel-riesgo').classList.replace('text-[#deff9a]', 'text-red-500');
+                map.flyTo([data.lat, data.lng], 14);
+            });
         }
 
-        // --- 3. MÁQUINA DE ESTADOS S.O.S ---
-        function abrirModalSOS() {
-            document.getElementById('modal-sos').classList.remove('hidden');
-            document.getElementById('modal-sos').classList.add('flex');
-        }
-        function cancelarSOS() {
-            document.getElementById('modal-sos').classList.add('hidden');
-            document.getElementById('modal-sos').classList.remove('flex');
-        }
+        // --- MÁQUINA DE ESTADOS S.O.S ---
+        function abrirModalSOS() { document.getElementById('modal-sos').classList.remove('hidden'); document.getElementById('modal-sos').classList.add('flex'); }
+        function cancelarSOS() { document.getElementById('modal-sos').classList.add('hidden'); document.getElementById('modal-sos').classList.remove('flex'); }
 
-        // FLUJO A: ME ROBARON EL VEHÍCULO
         function ejecutarRobo() {
             cancelarSOS();
-            mostrarToast("MODO PERSECUCIÓN ACTIVADO", "Reportando coordenadas a la red Mesh. Cortacorriente inercial programado.", true);
+            mostrarToast("MODO ROBO ACTIVO", "Mesh alertada. Cortacorriente inercial armado.", true);
+            document.getElementById('status-motor').innerText = "BLOQUEADO 🔒"; document.getElementById('status-motor').classList.replace('text-[#deff9a]', 'text-red-500');
             
-            // Simular corte de motor en UI
-            document.getElementById('status-motor').innerText = "BLOQUEADO 🔒";
-            document.getElementById('status-motor').classList.replace('text-[#deff9a]', 'text-red-500');
+            // Simular auto alejándose
+            let sLat = miLat, sLng = miLng;
+            setInterval(() => { sLat += 0.0006; sLng += 0.0006; if(miMarcador) miMarcador.setLatLng([sLat, sLng]); map.panTo([sLat, sLng]); }, 1000);
             
-            // Simular que el auto se aleja (Persecución)
-            let simLat = miLat;
-            let simLng = miLng;
-            let alejamiento = setInterval(() => {
-                simLat += 0.0005;
-                simLng += 0.0005;
-                if(miMarcador) miMarcador.setLatLng([simLat, simLng]);
-                map.panTo([simLat, simLng]);
-            }, 1000);
-
-            // Alerta Mesh Real
-            const payload = { lat: miLat, lng: miLng, patente: localStorage.getItem('gd_patente'), modelo: localStorage.getItem('gd_modelo') };
-            if(mqttClient) mqttClient.publish(TOPIC_SECRETO, JSON.stringify(payload));
+            if(mqttClient) mqttClient.publish(TOPIC_SECRETO, JSON.stringify({ lat: miLat, lng: miLng, patente: localStorage.getItem('gd_patente'), modelo: localStorage.getItem('gd_modelo') }));
             switchTab('mapa', document.querySelectorAll('.nav-btn')[0]);
         }
 
-        // FLUJO B: LOGRÉ ESCAPAR (Requiere PIN en X segundos)
         function ejecutarEscape() {
             cancelarSOS();
-            mostrarToast("Registro de Escape", "Activando modo de seguridad. El sistema verificará tu estado en breve.");
-            
-            // Simulación: Esperamos 10 segundos y lanzamos el Gatekeeper de vida
+            mostrarToast("Registro de Evasión", "Verificación de integridad iniciada. Atento a tu pantalla.");
+            // Pide PIN a los 10 segundos
             checkinTimer = setTimeout(() => {
-                solicitarPinDeVida();
+                mostrarToast("VERIFICACIÓN DE VIDA", "Ingresa tu PIN de seguridad inmediatamente.", true);
+                document.getElementById('pantalla-pin').classList.remove('hidden'); document.getElementById('pantalla-pin').classList.add('flex');
+                limpiarPin();
+                setTimeout(() => { if(document.getElementById('pantalla-pin').classList.contains('flex')) ignorarPin(); }, 15000);
             }, 10000); 
         }
 
-        function solicitarPinDeVida() {
-            mostrarToast("VERIFICACIÓN CRÍTICA", "Ingresa tu PIN para confirmar tu identidad.", true);
-            const pantallaPin = document.getElementById('pantalla-pin');
-            pantallaPin.classList.remove('hidden');
-            pantallaPin.classList.add('flex');
-            limpiarPin();
-            
-            // Si pasan 15 segundos sin meter el pin, apaga el auto automático
-            setTimeout(() => {
-                if(document.getElementById('pantalla-pin').classList.contains('flex')) {
-                    ignorarPin();
-                }
-            }, 15000);
+        // --- TECLADO PIN ---
+        function digitarPin(n) {
+            if(pinIngresado.length < 4) { pinIngresado += n; document.getElementById(`pin-dot-${pinIngresado.length}`).classList.add('bg-white'); }
+            if(pinIngresado.length === 4) setTimeout(() => validarPin(), 200);
         }
-
-        // --- 4. LÓGICA DEL TECLADO PIN ---
-        function digitarPin(num) {
-            if(pinIngresado.length < 4) {
-                pinIngresado += num;
-                document.getElementById(`pin-dot-${pinIngresado.length}`).classList.add('bg-white');
-            }
-            if(pinIngresado.length === 4) {
-                setTimeout(() => validarPin(), 200);
-            }
-        }
-
-        function limpiarPin() {
-            pinIngresado = "";
-            for(let i=1; i<=4; i++) document.getElementById(`pin-dot-${i}`).classList.remove('bg-white');
-        }
-
+        function limpiarPin() { pinIngresado = ""; for(let i=1; i<=4; i++) document.getElementById(`pin-dot-${i}`).classList.remove('bg-white'); }
         function validarPin() {
-            const pinCorrecto = localStorage.getItem('gd_pin');
-            if(pinIngresado === pinCorrecto) {
-                // PIN OK: Sobrevivió
-                document.getElementById('pantalla-pin').classList.add('hidden');
-                document.getElementById('pantalla-pin').classList.remove('flex');
-                mostrarToast("Identidad Confirmada", "Me alegra que estés a salvo. El vehículo sigue bajo tu control.");
+            if(pinIngresado === localStorage.getItem('gd_pin')) {
+                document.getElementById('pantalla-pin').classList.add('hidden'); document.getElementById('pantalla-pin').classList.remove('flex');
+                mostrarToast("Identidad Validada", "Modo seguro restaurado. Módulo en verde.");
             } else {
-                // PIN ERROR
-                limpiarPin();
-                document.getElementById('pantalla-pin').classList.add('animate-pulse');
+                limpiarPin(); document.getElementById('pantalla-pin').classList.add('animate-pulse');
                 setTimeout(()=>document.getElementById('pantalla-pin').classList.remove('animate-pulse'), 500);
                 if('vibrate' in navigator) navigator.vibrate(500);
             }
         }
+        function ignorarPin() { document.getElementById('pantalla-pin').classList.add('hidden'); document.getElementById('pantalla-pin').classList.remove('flex'); ejecutarRobo(); }
 
-        function ignorarPin() {
-            // Asume robo o secuestro
-            document.getElementById('pantalla-pin').classList.add('hidden');
-            document.getElementById('pantalla-pin').classList.remove('flex');
-            ejecutarRobo(); // Activa persecución y corte
+        // --- CAMARA Y NUBE ---
+        async function encenderCamara() {
+            try {
+                const vid = document.getElementById('webcam'); vid.srcObject = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                const model = await cocoSsd.load();
+                setInterval(async () => {
+                    const preds = await model.detect(vid);
+                    const am = preds.find(p => p.class === 'car' || p.class === 'person');
+                    if(am) { document.getElementById('ai-status').innerText = `[${am.class.toUpperCase()}]`; document.getElementById('ai-status').classList.replace('text-[#deff9a]', 'text-red-400'); }
+                    else { document.getElementById('ai-status').innerText = "VECTOR DESPEJADO"; document.getElementById('ai-status').classList.replace('text-red-400', 'text-[#deff9a]'); }
+                }, 1500);
+            } catch (e) { logConsola("Cámara en Standby."); }
         }
 
-        // --- MISC ---
+        function iniciarSubida() {
+            const file = document.getElementById('video-upload').files[0]; if(!file) return;
+            const prog = document.getElementById('upload-progress'), barra = document.getElementById('barra-progreso'), txt = document.getElementById('progreso-txt');
+            prog.classList.remove('hidden'); let w = 0;
+            let int = setInterval(() => {
+                w += 15; barra.style.width = Math.min(w, 100) + '%'; txt.innerText = Math.min(w, 100) + '%';
+                if(w >= 100) { clearInterval(int); setTimeout(() => { prog.classList.add('hidden'); document.getElementById('video-upload').value = ""; mostrarToast("Nube Segura", "Evidencia AES-256 almacenada."); }, 500); }
+            }, 300);
+        }
+
+        // --- CORTACORRIENTE MANUAL Y UI ---
         function simularCortacorriente() {
-            const btn = document.getElementById('btn-corte');
-            const state = document.getElementById('status-motor');
+            const btn = document.getElementById('btn-corte'), state = document.getElementById('status-motor');
             if(btn.classList.contains('bg-red-600')) {
-                btn.classList.replace('bg-red-600', 'bg-[#1e293b]');
-                btn.classList.replace('text-white', 'text-red-400');
-                state.innerText = "Energizado ⚡";
-                state.classList.replace('text-red-500', 'text-[#deff9a]');
-                mostrarToast("Sistema", "Corriente restaurada.");
+                btn.classList.replace('bg-red-600', 'bg-[#1e293b]'); btn.classList.replace('text-white', 'text-red-400');
+                state.innerText = "Energizado ⚡"; state.classList.replace('text-red-500', 'text-[#deff9a]');
+                mostrarToast("Hardware", "Corriente restaurada.");
             } else {
-                btn.classList.replace('bg-[#1e293b]', 'bg-red-600');
-                btn.classList.replace('text-red-400', 'text-white');
-                state.innerText = "BLOQUEADO 🔒";
-                state.classList.replace('text-[#deff9a]', 'text-red-500');
-                mostrarToast("Sistema", "Motor inmovilizado con éxito.", true);
+                btn.classList.replace('bg-[#1e293b]', 'bg-red-600'); btn.classList.replace('text-red-400', 'text-white');
+                state.innerText = "BLOQUEADO 🔒"; state.classList.replace('text-[#deff9a]', 'text-red-500');
+                mostrarToast("Hardware", "Corte inercial forzado activado.", true);
             }
         }
 
-        async function encenderCamara() {
-            try {
-                const video = document.getElementById('webcam');
-                video.srcObject = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            } catch (e) { logConsola("Cámara no detectada."); }
-        }
-
-        function switchTab(tabId, btn) {
+        function switchTab(tId, btn) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + tabId).classList.add('active');
-            btn.classList.add('active');
-            if(tabId === 'mapa' && map) setTimeout(() => map.invalidateSize(), 100);
+            document.getElementById('tab-' + tId).classList.add('active'); btn.classList.add('active');
+            if(tId === 'mapa' && map) setTimeout(() => map.invalidateSize(), 100);
         }
-
-        function logConsola(msg) {
-            const c = document.getElementById('ia-log');
-            c.innerHTML = `> [${new Date().toLocaleTimeString()}] ${msg}<br>` + c.innerHTML;
-        }
+        function logConsola(m) { document.getElementById('ia-log').innerHTML = `> [${new Date().toLocaleTimeString()}] ${m}<br>` + document.getElementById('ia-log').innerHTML; }
 
         verificarSesion();
     </script>
